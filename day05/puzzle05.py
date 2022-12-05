@@ -62,20 +62,19 @@ class InsertOrder(Enum):
     """Defines an Insertion Order"""
     Maintained = 0,
     Reversed = 1
+    @property
+    def is_reversed(self) -> bool:
+        return self == self.Reversed
 
 def perform_move(move: Move, stacks: list[list[str]], *, order=InsertOrder.Reversed):
     """performs a Move in-place on stacks"""
     def pop_n(num: int, seq: list, reversed=False):
-        """pops num elements from start of list. doesn't fail if len(list) < n, just returns len(list) instead"""
+        """pops num elements from start of list"""
         acc = []
         fn = acc.append if reversed else lambda elem: acc.insert(0, elem)
-        for _ in range(num):
-            try:
-                fn(seq.pop(0))
-            except IndexError:
-                pass
+        [fn(seq.pop(0)) for _ in range(num)]
         return acc
-    items = pop_n(move.num, stacks[move.source], reversed=(order==InsertOrder.Reversed))
+    items = pop_n(move.num, stacks[move.source], reversed=order.is_reversed)
     [stacks[move.dest].insert(0, i) for i in items] # annoying, list.insert only takes 1 element at a time
     return stacks
 
