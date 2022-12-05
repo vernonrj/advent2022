@@ -1,5 +1,7 @@
 """https://adventofcode.com/2022/day/5"""
+import copy
 from dataclasses import dataclass
+from enum import Enum
 import itertools
 import re
 from typing import Iterator, Tuple
@@ -56,18 +58,24 @@ def parse_lines(lines: list[str]) -> Tuple[list[list[str]], list[Move]]:
     moves = parse_move_lines(moves_text)
     return (stacks, moves)
 
-def perform_move(move: Move, stacks: list[list[str]]):
+class InsertOrder(Enum):
+    """Defines an Insertion Order"""
+    Maintained = 0,
+    Reversed = 1
+
+def perform_move(move: Move, stacks: list[list[str]], *, order=InsertOrder.Reversed):
     """performs a Move in-place on stacks"""
-    def pop_n(num: int, seq: list):
+    def pop_n(num: int, seq: list, reversed=False):
         """pops num elements from start of list. doesn't fail if len(list) < n, just returns len(list) instead"""
         acc = []
+        fn = acc.append if reversed else lambda elem: acc.insert(0, elem)
         for _ in range(num):
             try:
-                acc.append(seq.pop(0))
+                fn(seq.pop(0))
             except IndexError:
                 pass
         return acc
-    items = pop_n(move.num, stacks[move.source])
+    items = pop_n(move.num, stacks[move.source], reversed=(order==InsertOrder.Reversed))
     [stacks[move.dest].insert(0, i) for i in items] # annoying, list.insert only takes 1 element at a time
     return stacks
 
@@ -75,7 +83,12 @@ if __name__ == '__main__':
     with open('input.txt') as fptr:
         lines = fptr.read().splitlines()
     (stacks, moves) = parse_lines(lines)
+    stacks_p1 = copy.deepcopy(stacks)
     for each_move in moves:
-        perform_move(each_move, stacks)
-    top = ''.join(s[0] for s in stacks)
-    print(f"tops of stack: {top}")
+        perform_move(each_move, stacks_p1)
+    top_p1 = ''.join(s[0] for s in stacks_p1)
+    print(f"tops of stack (part 1): {top_p1}")
+    for each_move in moves:
+        perform_move(each_move, stacks, order=InsertOrder.Maintained)
+    top_p2 = ''.join(s[0] for s in stacks)
+    print(f"tops of stack (part 2): {top_p2}")
