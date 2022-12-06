@@ -12,15 +12,15 @@ def parse_stack_lines(lines: list[str]) -> list[list[str]]:
     """
     parses the lines from the input into a list of stacks
 
-    parse_stack_lines(["    [D]", "[N] [C]", "[Z] [M] [P]", "1   2   3"])
+    > parse_stack_lines(["    [D]", "[N] [C]", "[Z] [M] [P]", "1   2   3"])
     [["N", "Z"], ["D", "C", "M"], ["P"]]
     """
-    columns: list[int] = [m.start() for m in re.finditer(r"\d+", lines[-1])]
-    stacks = [list() for _ in range(len(columns))]
+    column_idxs: list[int] = [m.start() for m in re.finditer(r"\d+", lines[-1])]
+    stacks = [list() for _ in range(len(column_idxs))]
     for each_line in lines[:-1]:
-        for (idx, each_column) in enumerate(columns):
-            if each_column < len(each_line) and each_line[each_column] != ' ':
-                stacks[idx].append(each_line[each_column])
+        for (stack_idx, each_column_idx) in enumerate(column_idxs):
+            if each_column_idx < len(each_line) and each_line[each_column_idx] != ' ':
+                stacks[stack_idx].append(each_line[each_column_idx])
     return stacks
 
 @dataclass
