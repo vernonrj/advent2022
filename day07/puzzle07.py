@@ -169,15 +169,6 @@ class CustPath:
             return sum(p.size() for p in self.iterdir())
         return self._get_entry()
 
-def dirs_smaller_than(fs: CustPath, size: int) -> list[CustPath]:
-    smolbois = []
-    children = list(fs.iterdir())
-    while children:
-        smol = (c for c in children if c.is_dir() and c.size() < size)
-        smolbois.extend(smol)
-        children = list(itertools.chain.from_iterable(ch.iterdir() for ch in children if ch.is_dir()))
-    return smolbois
-
 def iterdir_recursive(fs: CustPath) -> list[CustPath]:
     all_paths = [fs]
     children = [c for c in fs.iterdir()]
@@ -191,8 +182,11 @@ if __name__ == '__main__':
     with open('input.txt') as fptr:
         input = fptr.read().splitlines()
     fs = CustPath.from_logfile(input)
+    # find all directories
+    all_paths = iterdir_recursive(fs)
+    all_dirs = [p for p in all_paths if p.is_dir()]
     # part 1
-    smolbois = dirs_smaller_than(fs, 100_000)
+    smolbois = [d for d in all_dirs if d.size() < 100_000]
     total_size = sum(p.size() for p in smolbois)
     print(f"total of dirs smaller than 100_000: {total_size}")
     # part 2
@@ -205,8 +199,6 @@ if __name__ == '__main__':
         raise ValueError("lol this isn't right")
     print(f"need to free additional {to_free}")
     # find all directories
-    all_paths = iterdir_recursive(fs)
-    all_dirs = [p for p in all_paths if p.is_dir()]
     all_dirs.sort(key=lambda d: d.size())
     large_enough_dirs = filter(lambda d: d.size() > to_free, all_dirs)
     dir_to_delete = next(large_enough_dirs)
