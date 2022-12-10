@@ -1,1 +1,8 @@
+# my input files
 input.txt
+example_input.txt
+example_input*.txt
+example_input_*.txt
+
+# python stuff
+__pycache__
