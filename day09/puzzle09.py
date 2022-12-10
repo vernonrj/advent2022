@@ -26,7 +26,6 @@
 
 from argparse import ArgumentParser
 from dataclasses import dataclass
-import copy
 from enum import Enum
 import logging
 from typing import Iterable, Iterator, Tuple
@@ -51,7 +50,7 @@ class Move(Enum):
             rope = new_rope
             # print_field(rope)
             if visited is not None:
-                visited.add(copy.copy(tail))
+                visited.add(tail)
         return rope
 
 def parse_movelist(lines: list[str]) -> Iterator[Tuple[Move, int]]:
@@ -105,10 +104,10 @@ def move_tail(*, head: Point, tail: Point) -> Point:
 def simulate_moves(movelist: Iterable[Tuple[Move, int]], rope_length: int) -> set[Point]:
     """simulates the moves from a movelist for a rope of length `rope_length`, returning the points visited"""
     rope = [Point(0, 0) for _ in range(rope_length)]
-    visited: set[Point] = {copy.copy(rope[-1])}
+    visited: set[Point] = {rope[-1]}
     for (move, times) in movelist:
         rope = move.apply(rope, times=times, visited=visited)
-        visited.add(copy.copy(rope[-1]))
+        visited.add(rope[-1])
     return visited
 
 def print_field(rope: list[Point]):
