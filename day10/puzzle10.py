@@ -42,8 +42,29 @@ def execute(instructions: Iterable[Instruction]) -> Iterator[Tuple[str, int]]:
                 yield ("noop", state_x)
             case Addx(value):
                 yield (f"addx1 {value}", state_x)
-                state_x += value
                 yield (f"addx2 {value}", state_x)
+                state_x += value
+
+def render_screen(instructions: Iterable[Instruction]) -> list[str]:
+    """renders a screen using the instructions passed in"""
+    @dataclass
+    class SpritePos:
+        pc: int
+        def is_pixel_lit(self, x_val: int) -> bool:
+            return (self.pc % 40) in (x_val-1, x_val, x_val+1)
+    machine_iter: Iterator[int] = (x for (_, x) in execute(instructions))
+    sprites = [SpritePos(x) for x in range(240)]
+    on_iter = (sp.is_pixel_lit(p) for (sp, p) in zip(sprites, machine_iter))
+    pixels = ''.join("#" if on else "." for on in on_iter)
+    screen = [
+        pixels[0:40],
+        pixels[40:80],
+        pixels[80:120],
+        pixels[120:160],
+        pixels[160:200],
+        pixels[200:240]
+    ]
+    return screen
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -52,10 +73,10 @@ if __name__ == '__main__':
     with open(matches.input) as fptr:
         instructions = list(decode_instructions(fptr))
         machine_iter = list(enumerate(execute(instructions), start=1))
-        # for line in machine_iter[:220]:
-        #     print(line)
-        cycles = {19, 59, 99, 139, 179, 219} # we want DURING, not AFTER the 20/60/100/etc cycle, so check the end of the PREVIOUS cycle.
-        stronks_of_interest = [(pc+1, x) for (pc, (_, x)) in machine_iter if pc in cycles]
+        cycles = {20, 60, 100, 140, 180, 220}
+        stronks_of_interest = [(pc, x) for (pc, (_, x)) in machine_iter if pc in cycles]
         print(f"strengths: {stronks_of_interest}")
         total_stronk = sum(pc * x for (pc, x) in stronks_of_interest)
         print(f"sum: {total_stronk}")
+        for line in render_screen(instructions):
+            print(line)
