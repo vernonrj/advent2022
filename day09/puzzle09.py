@@ -30,30 +30,7 @@ from enum import Enum
 import logging
 from typing import Iterable, Iterator, Tuple
 
-class Move(Enum):
-    Up = (0, 1)
-    Down = (0, -1)
-    Left = (-1, 0)
-    Right = (1, 0)
-    def apply(self, rope: list['Point'], *, times: int = 1, visited: set['Point'] = None) -> Tuple['Point', 'Point']:
-        """apply a movement to the head and tail, returning (head, tail)"""
-        (x, y) = self.value
-        # print(f"\n{self} {times} times")
-        for _ in range(times):
-            (head, *rest) = rope
-            head = Point(x=head.x + x, y=head.y+y)
-            new_rope = [head]
-            for tail in rest:
-                tail = move_tail(head=head, tail=tail)
-                new_rope.append(tail)
-                head = tail
-            rope = new_rope
-            # print_field(rope)
-            if visited is not None:
-                visited.add(tail)
-        return rope
-
-def parse_movelist(lines: list[str]) -> Iterator[Tuple[Move, int]]:
+def parse_movelist(lines: list[str]) -> Iterator[Tuple['Move', int]]:
     """parses a list of lines into a list of moves"""
     for line in lines:
         match line.split():
@@ -76,6 +53,38 @@ class Point:
         return Point(self.x + other.x, self.y + other.y)
     def __sub__(self, other: 'Point') -> 'Point':
         return Point(self.x - other.x, self.y - other.y)
+
+def simulate_moves(movelist: Iterable[Tuple['Move', int]], rope_length: int) -> set[Point]:
+    """simulates the moves from a movelist for a rope of length `rope_length`, returning the points visited"""
+    rope = [Point(0, 0) for _ in range(rope_length)]
+    visited: set[Point] = {rope[-1]}
+    for (move, times) in movelist:
+        rope = move.apply(rope, times=times, visited=visited)
+        visited.add(rope[-1])
+    return visited
+
+class Move(Enum):
+    Up = (0, 1)
+    Down = (0, -1)
+    Left = (-1, 0)
+    Right = (1, 0)
+    def apply(self, rope: list[Point], *, times: int = 1, visited: set[Point] = None) -> list[Point]:
+        """apply a movement to the head and tail, returning (head, tail)"""
+        (x, y) = self.value
+        # print(f"\n{self} {times} times")
+        for _ in range(times):
+            (head, *rest) = rope
+            head = Point(x=head.x + x, y=head.y+y)
+            new_rope = [head]
+            for tail in rest:
+                tail = move_tail(head=head, tail=tail)
+                new_rope.append(tail)
+                head = tail
+            rope = new_rope
+            # print_field(rope)
+            if visited is not None:
+                visited.add(tail)
+        return rope
 
 def move_tail(*, head: Point, tail: Point) -> Point:
     """move the tail to a new point"""
@@ -100,15 +109,6 @@ def move_tail(*, head: Point, tail: Point) -> Point:
             return Point(new_x, head.y)
         case _ as err:
             raise ValueError(f"invalid tail position. Head: {head}, Tail: {tail}. (Head - Tail = {err})")
-
-def simulate_moves(movelist: Iterable[Tuple[Move, int]], rope_length: int) -> set[Point]:
-    """simulates the moves from a movelist for a rope of length `rope_length`, returning the points visited"""
-    rope = [Point(0, 0) for _ in range(rope_length)]
-    visited: set[Point] = {rope[-1]}
-    for (move, times) in movelist:
-        rope = move.apply(rope, times=times, visited=visited)
-        visited.add(rope[-1])
-    return visited
 
 def print_field(rope: list[Point]):
     """prints the field"""
