@@ -1,6 +1,8 @@
 """https://adventofcode.com/2022/day/11"""
 import argparse
 from dataclasses import dataclass
+from enum import Enum
+from functools import reduce
 import operator
 import re
 from typing import Callable, Iterable, Iterator, Tuple
@@ -64,14 +66,23 @@ class Monkey:
     true_throw_to: int
     false_throw_to: int
     inspected: int = 0
-    def run_test(self) -> Tuple[int, int]:
+    def run_test(self, *, all_monkeys: list['Monkey']) -> Tuple[int, int]:
         """returns the monkey to throw the item to, and the item"""
         self.inspected += 1
         next_item_worry = self.items.pop(0)
-        new_worry = self.operation(next_item_worry) // 3
+        new_worry = self.operation(next_item_worry)
+        div_worry = find_new_worry(all_monkeys, new_worry)
+        # print(f"worry {new_worry} => {div_worry}")
+        new_worry = div_worry
         if (new_worry % self.divisibility_test) == 0:
             return (self.true_throw_to, new_worry)
         return (self.false_throw_to, new_worry)
+
+def find_new_worry(monkeys: Iterable[Monkey], worry: int) -> int:
+    """find a new worry level that is smaller"""
+    divs = sorted((m.divisibility_test for m in monkeys), reverse=True)
+    value = reduce(operator.mul, divs)
+    return worry % value
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -79,16 +90,16 @@ if __name__ == '__main__':
     matches = parser.parse_args()
     with open(matches.input) as fptr:
         monkeys = list(parse_monkeys(fptr))
-    for round in range(1, 21):
-        print(f"Round {round}")
+    for round in range(1, 10001):
+        # print(f"Round {round}")
         for monkey in monkeys:
             while monkey.items:
-                (thrown_to, worry) = monkey.run_test()
+                (thrown_to, worry) = monkey.run_test(all_monkeys=monkeys)
                 # print(f"thows to {thrown_to} with worry {worry}")
                 monkeys[thrown_to].items.append(worry)
-        print(f"after round {round}, monkeys are holding items with these worry levels:")
-        for (idx, monkey) in enumerate(monkeys):
-            print(f"monkey {idx}: holding {monkey.items}, inspected {monkey.inspected} items")
+        # print(f"after round {round}, monkeys are holding items with these worry levels:")
+        # for (idx, monkey) in enumerate(monkeys):
+        #     print(f"monkey {idx}: holding {monkey.items}, inspected {monkey.inspected} items")
     by_activity = sorted(monkeys, key=lambda m: m.inspected, reverse=True)
     (most_active, next_most) = (by_activity[0], by_activity[1])
     print(f"monkey business = {most_active.inspected} * {next_most.inspected} = {most_active.inspected * next_most.inspected}")
