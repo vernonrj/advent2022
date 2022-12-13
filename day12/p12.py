@@ -6,6 +6,9 @@ import io
 import math
 from typing import Callable, Iterator, Tuple
 
+class NoSolutionError(ValueError):
+    """raises if there is no solution to (start, end)"""
+
 @dataclass(frozen=True)
 class Point:
     x: int
@@ -46,6 +49,13 @@ class Grid:
         self.start = start
         self.end = end
         self.weights = weights
+    def find_all(self, pred: Callable[[Point], bool]) -> Iterator[Point]:
+        """returns all nodes where pred(node) returns True"""
+        for y in range(len(self.weights)):
+            for x in range(len(self.weights[0])):
+                p = Point(x, y)
+                if pred(p):
+                    yield p
     def neighbors(self, node: Point) -> Iterator[Point]:
         """returns a list of neighbors to `node`"""
         if node.x > 0:
@@ -101,7 +111,7 @@ def a_star(start: Point, goal: Point, grid: Grid):
                 f_score[each_neighbor] = tentative_gscore + grid.h(each_neighbor)
                 if each_neighbor not in open_set:
                     open_set.append(each_neighbor)
-    raise ValueError("open_set is empty but goal was never reached!")
+    raise NoSolutionError("open_set is empty but goal was never reached!")
 
 def render_came_from(came_from: dict[Point, Point], good_path: list[Point], grid: Grid) -> str:
     """renders the dictionary describing predecessors"""
@@ -147,7 +157,18 @@ if __name__ == '__main__':
     matches = parser.parse_args()
     with open(matches.input) as fptr:
         (weights, start, end) = parse_levels(fptr.read().splitlines())
-        grid = Grid(weights, start=start, end=end)
-        (path, came_from) = a_star(grid.start, grid.end, grid)
-        print(f"finish in {len(path)-1} steps")
-        print(render_came_from(came_from, path, grid))
+    grid = Grid(weights, start=start, end=end)
+    (path, came_from) = a_star(grid.start, grid.end, grid)
+    print(f"part 1: finish in {len(path)-1} steps")
+    # print(render_came_from(came_from, path, grid))
+    all_lowest = grid.find_all(lambda p: grid.weight(p) == 0)
+    shortest_path = len(path) - 1
+    for each_start in all_lowest:
+        grid.start = each_start
+        # print(f"check start {each_start}")
+        try:
+            (path, _) = a_star(grid.start, grid.end, grid)
+        except NoSolutionError:
+            continue
+        shortest_path = min(shortest_path, len(path) - 1)
+    print(f"shortest path: {shortest_path}")
