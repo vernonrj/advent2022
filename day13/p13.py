@@ -1,6 +1,8 @@
 """https://adventofcode.com/2022/day/13"""
 
 import argparse
+from functools import cmp_to_key
+import itertools
 import json
 from typing import Any, Iterable, Iterator, Tuple
 
@@ -100,7 +102,17 @@ if __name__ == '__main__':
     parser.add_argument("input", help="input file to pull from")
     matches = parser.parse_args()
     with open(matches.input) as fptr:
-        packets = list(parse_input(fptr.read().splitlines()))
-        ordered = [i for (i, (l, r)) in enumerate(packets, start=1) if is_ordered(l, r)]
+        packets_tup = list(parse_input(fptr.read().splitlines()))
+        ordered = [i for (i, (l, r)) in enumerate(packets_tup, start=1) if is_ordered(l, r)]
         print(f"ordered: {ordered}")
         print(f"sum of indices: {sum(ordered)}")
+        packets: list[list[list | int]] = list(itertools.chain.from_iterable(packets_tup))
+        packets.append([[2]])
+        packets.append([[6]])
+        packets.sort(key=cmp_to_key(lambda l, r: -1 if is_ordered(l, r) else 1))
+        # print("sorted:")
+        # for each in packets:
+        #     print(each)
+        idx_2 = packets.index([[2]]) + 1
+        idx_6 = packets.index([[6]]) + 1
+        print(f"idxs = {idx_2} * {idx_6} = {idx_2 * idx_6}")
