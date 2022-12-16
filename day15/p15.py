@@ -2,6 +2,7 @@
 
 import argparse
 from dataclasses import dataclass
+import itertools
 import re
 from typing import Any, Callable, Iterable, Iterator, Self
 
@@ -74,17 +75,38 @@ def points_covered_by_beacons(sensors: list[Sensor], y_val: int) -> int:
     # print(f"covered({len(covered_by_beacons)}): {covered_by_beacons}")
     return len(covered_by_beacons)
 
+def around(point: Point, distance: int) -> Iterator[Point]:
+    """returns an iterator of points `distance` away from `point`"""
+    for x in range(0, distance+1):
+        y = distance - x
+        yield point + Point(x, y)
+        if y:
+            yield point + Point(x, -y)
+        if x:
+            yield point + Point(-x, y)
+        if x and y:
+            yield point + Point(-x, -y)
+
 def solve1(sensors: list[Sensor]):
     c = points_covered_by_beacons(sensors, 2000000)
     print(f"covered by beacons: {c}")
 
-def solve2(sensors: list[Sensor]) -> Point:
-    for y in range(0, 4000000+1):
-        for x in range(0, 4000000+1):
-            p = Point(x, y)
-            if not list(point_covered_by(p, sensors)):
-                return p
-    raise ValueError("point not found")
+def solve2(sensors: list[Sensor], dim: int = 20):
+    for each in sensors:
+        print(f"sensor: {each}")
+        total_dist = Point.manhattan_distance(each.location, each.closest_beacon)
+        for point in around(each.location, total_dist+1):
+            if point.x < 0 or point.x > dim or point.y < 0 or point.y > dim:
+                continue
+            cov = point_covered_by(point, sensors)
+            try:
+                next(cov)
+            except StopIteration:
+                print(f"found uncovered point at {point}")
+                tuning_freq = point.x * 4000000 + point.y
+                print(f"tuning frequency: {tuning_freq}")
+                return
+    raise ValueError("no point found")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -93,4 +115,4 @@ if __name__ == '__main__':
     with open(matches.input) as fptr:
         sensors = list(parse_input(fptr.read().splitlines()))
         # solve1(sensors)
-        solve2(sensors)
+        solve2(sensors, dim=4000000)
